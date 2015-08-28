@@ -11,8 +11,8 @@ class GBoostModel(BaseModel):
     def __init__(self, cached_features):
         BaseModel.__init__(self, cached_features)
         naive_bayes = cPickle.load(open("working/models/naive_bayes_model.pickle", "rb"))
-        imp_neg_features = set([x[0] for x in sorted(enumerate(naive_bayes.model.feature_count_[0]), key=itemgetter(1))[-1000:]])
-        imp_pos_features = set([x[0] for x in sorted(enumerate(naive_bayes.model.feature_count_[1]), key=itemgetter(1))[-1000:]])
+        imp_neg_features = set([x[0] for x in sorted(enumerate(naive_bayes.model.feature_count_[0]), key=itemgetter(1))[-5000:]])
+        imp_pos_features = set([x[0] for x in sorted(enumerate(naive_bayes.model.feature_count_[1]), key=itemgetter(1))[-5000:]])
         self.features = list(imp_neg_features.union(imp_pos_features))
         self.model = GradientBoostingClassifier(n_estimators=1000, learning_rate=0.1, subsample=0.7,
                                                 min_samples_leaf=10, max_depth=7, random_state=1,

@@ -12,22 +12,25 @@ from naive_bayes_model import NaiveBayesModel
 from passive_aggressive_model import PassiveAggressiveModel
 from gboost_model import GBoostModel
 from keras_model import KerasModel
+from lstm_model import LSTMModel
+from convnet_model import ConvnetModel
 
 if __name__ == "__main__":
     
     cached = True
 
-    models = { "sgd_model": SGDModel(cached), 
-               "perceptron_model": PerceptronModel(cached),
-               "naive_bayes_model": NaiveBayesModel(cached),
-               "passive_aggressive_model": PassiveAggressiveModel(cached),
-               "gboost_model": GBoostModel(cached),
-               "keras_model": KerasModel(cached)
+    models = { "sgd_model": "SGDModel", 
+               "perceptron_model": "PerceptronModel",
+               "naive_bayes_model": "NaiveBayesModel",
+               "passive_aggressive_model": "PassiveAggressiveModel",
+               "gboost_model": "GBoostModel",
+               "keras_model": "KerasModel",
+               "convnet_model": "ConvnetModel"
     }
 
     model_name = sys.argv[1]
     print "Creating", model_name, ": ",
-    model = models[model_name]
+    model = globals()[models[model_name]](cached)
     print model.__class__.__name__
 
     model.fit()
