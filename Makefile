@@ -6,7 +6,7 @@ all: $(PRED_DIR)/naive_bayes_model.csv $(PRED_DIR)/keras_model.csv $(PRED_DIR)/x
 
 .PHONY: all
 
-MODELS := naive_bayes_model keras_model xgboost_model
+MODELS := libsvm_transformer naive_bayes_model keras_model xgboost_model
 
 # Method to iterate over all models and build one-by-one
 define make-model-targets
