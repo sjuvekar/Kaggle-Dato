@@ -38,3 +38,20 @@ class FeatureExtractor(object):
     def dump(self, filename):
         with open(filename, "wb") as f:
             cPickle.dump(self, f)
+
+if __name__ == "__main__":
+    # train
+    f = FeatureExtractor("data/train.csv")
+    count = 0
+    for (X_train, y_train) in f.nextBatch():
+        f.dumpBatch( (X_train, y_train), "working/models/train_batches/{}.pickle".format(count))
+        count += 1
+    f.dump("working/models/train_feature_extractor.pickle")
+
+    # test
+    f = FeatureExtractor("data/sampleSubmission.csv")
+    count = 0
+    for (X_train, y_train) in f.nextBatch():
+        f.dumpBatch( (X_train, y_train), "working/models/test_batches/{}.pickle".format(count))
+        count += 1
+    f.dump("working/models/test_feature_extractor.pickle")
