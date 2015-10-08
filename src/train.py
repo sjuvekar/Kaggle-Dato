@@ -3,9 +3,9 @@ import numpy
 import pandas
 import sys
 
-
 from naive_bayes_model import NaiveBayesModel
 from keras_model import KerasModel
+from xgboost_model import XGBoostModel
 
 if __name__ == "__main__":
     
@@ -13,6 +13,7 @@ if __name__ == "__main__":
 
     models = {"naive_bayes_model": "NaiveBayesModel",
               "keras_model": "KerasModel",
+              "xgboost_model": "XGBoostModel"
               }
 
     model_name = sys.argv[1]
