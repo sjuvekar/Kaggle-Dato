@@ -9,7 +9,10 @@ all: $(PRED_DIR)/naive_bayes_model.csv $(PRED_DIR)/keras_model.csv $(PRED_DIR)/x
 $(MODEL_DIR)/feature_extractor.pickle: src/feature_extractor.py
 	python $^
 
-MODELS := libsvm_transformer naive_bayes_model keras_model xgboost_model
+$(MODEL_DIR)/libsvm_transformer.pickle: src/libsvm_transformer.py
+	python $^
+
+MODELS := naive_bayes_model keras_model xgboost_model
 
 # Method to iterate over all models and build one-by-one
 define make-model-targets

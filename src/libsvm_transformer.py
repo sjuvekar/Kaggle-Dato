@@ -41,3 +41,17 @@ class LibSvmTransformer(BaseModel):
     def _predict_internal(self, X_test):
         self._convert_batch_to_libsvm(X_test, numpy.zeros(len(X_test)), "{}.{}".format(self.test_file, self.test_count))
         self.test_count += 1
+
+
+if __name__ == "__main__":
+    l = LibSvmTransformer(True)
+    
+    # Transform train data
+    print "Transforming Train data into libsvm format"
+    for (X_train, y_train) in l.feature_extractor.nextBatch():
+        i._fit_internal(X_train, y_train)
+    
+    # Transform test data
+    print "Transforming Test data into libsvm format"
+    for (X_test, y_test_ignored) in l.test_feature_extractor.nextBatch():
+        l._predict_internal(X_test))
