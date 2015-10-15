@@ -1,8 +1,14 @@
+import sys
+import pandas
 import cPickle
 import base_model
 import numpy
+import gc
+import gzip
 from operator import itemgetter
 numpy.random.seed(1337)
+
+from sklearn.metrics import roc_auc_score
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Dropout
@@ -17,14 +23,21 @@ class KerasModel(base_model.BaseModel):
     def __init__(self, cached_features):
         base_model.BaseModel.__init__(self, cached_features)
         self.weights_file = "working/models/keras_model.pickle.weights"
+        print "Loading naive_bayes.pickle..."
         naive_bayes = cPickle.load(open("working/models/naive_bayes_model.pickle", "rb"))
-        imp_neg_features = set([x[0] for x in sorted(enumerate(naive_bayes.model.feature_count_[0]), key=itemgetter(1))[-10000:]])
-        imp_pos_features = set([x[0] for x in sorted(enumerate(naive_bayes.model.feature_count_[1]), key=itemgetter(1))[-10000:]])
+        print "Loading positive weights..."
+        imp_neg_features = set([x[0] for x in sorted(enumerate(naive_bayes.model.feature_count_[0]), key=itemgetter(1))[-300000:]])
+        print "Loading negative weights..."
+        imp_pos_features = set([x[0] for x in sorted(enumerate(naive_bayes.model.feature_count_[1]), key=itemgetter(1))[-300000:]])
         self.features = list(imp_neg_features.union(imp_pos_features))
-        #self.num_features = len(self.features)
-        self.num_features = 262144
+        del naive_bayes
+        del imp_neg_features
+        del imp_pos_features
+        gc.collect()
+        self.num_features = len(self.features)
+        self.num_features = 439640
         self.model = self.SetupModel(self.num_features)
-        self.n_epochs = 15
+        self.n_epochs = 30
 
 
     def SetupModel(self, input_size=10000):
@@ -35,15 +48,15 @@ class KerasModel(base_model.BaseModel):
         model.add(Dense(input_size, 512))
         model.add(PReLU((512,)))
 
-        model.add(Dropout(0.25))
+        model.add(Dropout(0.1))
         model.add(Dense(512, 256))
         model.add(PReLU((256,)))
 
-        model.add(Dropout(0.1))
+        model.add(Dropout(0.05))
         model.add(Dense(256, 128))
         model.add(PReLU((128,)))
 
-        model.add(Dropout(0.05))
+        model.add(Dropout(0.025))
         model.add(Dense(128, 64))
         model.add(PReLU((64,)))
 
@@ -53,43 +66,74 @@ class KerasModel(base_model.BaseModel):
         return model
 
 
-    """
-    def _fit_internal(self, X_train, y_train):
-        X_new = X_train[:, self.features].toarray()
-        y_new = np_utils.to_categorical(y_train)
-        (loss, acc) = self.model.train_on_batch(X_new, y_new, accuracy=True)
-        print "Loss = ", loss, ", Accuracy = ", acc
-    """
     def _fit_internal(self, X_train, y_train):
         minibatch_size = 100
         start_index = 0
         X_len = X_train.shape[0]
         while start_index < X_len:
             end_index = min(start_index + minibatch_size, X_len)
-            X_new = X_train[start_index:end_index, :].toarray()
+            X_new = X_train[start_index:end_index, self.features].toarray()
             y_new = np_utils.to_categorical(y_train[start_index:end_index], nb_classes=2)
             print "   Training minibatch", start_index, ": ", end_index,
             (loss, acc) = self.model.train_on_batch(X_new, y_new, accuracy=True)
             print "Loss = ", loss, ", Accuracy = ", acc
             start_index = end_index
+    
 
+    def _predict_internal(self, X_test):
+        y_ans = numpy.array([])
+        minibatch_size = 100
+        start_index = 0
+        X_len = X_test.shape[0]
+        while start_index < X_len:
+            end_index = min(start_index + minibatch_size, X_len)
+            X_new = X_test[start_index:end_index, self.features].toarray()
+            y_ans = numpy.append(y_ans, self.model.predict(X_new, batch_size=minibatch_size)[:, 1])
+            start_index = end_index
+        return y_ans
 
+    
     def fit(self):
+        #self.model.load_weights("working/submit_models/keras_model.pickle.weights")
         print "   Fitting ", self.__class__.__name__, "..."
+        shuffled_features = range(self.feature_extractor.max_index)
+        numpy.random.shuffle(shuffled_features)
+        # Create validation batches
+        valid_batches = dict()
+        for i in range(11):
+            valid_batches[shuffled_features[i]] = 1
+        print "These batches are used for validation: ", valid_batches.keys() 
+
+        max_auc_score = 0
         for epoch in range(self.n_epochs):
+            # Define test and validation arrays
+            y_pred_total = numpy.array([])
+            y_valid_total = numpy.array([])
+
             print "Training epoch", epoch, "..."
-            s = range(self.feature_extractor.max_index)
-            numpy.random.shuffle(s)
-            print s
-            for my_idx in s:
-                (X_train, y_train) = cPickle.load(open("{}/{}.pickle".format(self.feature_extractor.cache_path, my_idx)))
-                print "   Training batch ", my_idx, "..."
+            shuffled_features = range(self.feature_extractor.max_index)
+            numpy.random.shuffle(shuffled_features)
+            for my_idx in shuffled_features:
+                if my_idx in valid_batches.keys():
+                    continue
+                (X_train, y_train) = cPickle.load(gzip.open("{}/{}.pickle.tgz".format(self.feature_extractor.cache_path, my_idx)))
+                print "   Training batch ", my_idx, "...",
+                print "Positive Percentage =", sum(y_train) * 1. / len(y_train)
                 self._fit_internal(X_train, y_train)
-                if not self.cached_features:
-                    dump_file = "working/models/train_batches/{}.pickle".format(my_idx)
-                    print "Dumping to {}".format(dump_file)
-                    seld.feature_extractor.dumpBatch((X_train, y_train), dump_file)
-       
+
+            for my_idx in valid_batches.keys():
+                (X_train, y_train) = cPickle.load(gzip.open("{}/{}.pickle.tgz".format(self.feature_extractor.cache_path, my_idx)))
+                print "   Collecting cross validation for batch ", my_idx, "..."
+                y_pred_total = numpy.append(y_pred_total, self._predict_internal(X_train))
+                y_valid_total = numpy.append(y_valid_total, y_train)
+
+            auc_score = roc_auc_score(y_valid_total, y_pred_total)
+            print "AUC score = ", auc_score
+            if auc_score > max_auc_score:
+                print "AUC score exceeded, saving weights"
+                max_auc_score = auc_score
+                self.model.save_weights(self.weights_file, overwrite=True)
+    
 
     def predict_proba(self):
         print "   Predicting ", self.__class__.__name__, "..."
@@ -111,22 +155,9 @@ class KerasModel(base_model.BaseModel):
         return y_ans
 
 
-    def _predict_internal(self, X_test):
-        y_ans = numpy.array([])
-        minibatch_size = 100
-        start_index = 0
-        X_len = X_test.shape[0]
-        while start_index < X_len:
-            end_index = min(start_index + minibatch_size, X_len)
-            X_new = X_test[start_index:end_index, :].toarray()
-            y_ans = numpy.append(y_ans, self.model.predict(X_new, batch_size=minibatch_size)[:, 1])
-            start_index = end_index
-        return y_ans
-
-
     def dump(self, filename):
         print "saving weights to: ", self.weights_file
-        self.model.save_weights(self.weights_file, overwrite=True)
+        #self.model.save_weights(self.weights_file, overwrite=True)
         self.model = None
         print "Dumping model to ", filename, "..."
         with open(filename, "wb") as f:
