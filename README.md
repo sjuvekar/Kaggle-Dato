@@ -11,3 +11,4 @@ This code mainly builds XGBoost and MLP Keras models using HashingVectorizer (ht
 * Convert those important features in LibSVM format for easy sparse encoding
 * Learn both XGBoost and Keras models using these features
 
+We have provided a simple **run.sh** script automate these steps. An ensemble of these two models alone could give you a validation AUC-score of close to 0.984
