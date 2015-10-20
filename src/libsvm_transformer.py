@@ -54,4 +54,4 @@ if __name__ == "__main__":
     # Transform test data
     print "Transforming Test data into libsvm format"
     for (X_test, y_test_ignored) in l.test_feature_extractor.nextBatch():
-        l._predict_internal(X_test))
+        l._predict_internal(X_test)
