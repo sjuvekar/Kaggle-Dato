@@ -49,7 +49,7 @@ if __name__ == "__main__":
     # Transform train data
     print "Transforming Train data into libsvm format"
     for (X_train, y_train) in l.feature_extractor.nextBatch():
-        i._fit_internal(X_train, y_train)
+        l._fit_internal(X_train, y_train)
     
     # Transform test data
     print "Transforming Test data into libsvm format"
