@@ -35,7 +35,7 @@ class KerasModel(base_model.BaseModel):
         del imp_pos_features
         gc.collect()
         self.num_features = len(self.features)
-        self.num_features = 439640
+        self.num_features = 408852
         self.model = self.SetupModel(self.num_features)
         self.n_epochs = 30
 
@@ -44,23 +44,23 @@ class KerasModel(base_model.BaseModel):
         model = Sequential()
 
         # deep pyramidal MLP, narrowing with depth
-        model.add(Dropout(0.1))
-        model.add(Dense(input_size, 512))
-        model.add(PReLU((512,)))
+        model.add(Dropout(0.1, input_shape=(input_size,)))
+        model.add(Dense(512, input_dim=input_size))
+        model.add(PReLU())
 
         model.add(Dropout(0.1))
-        model.add(Dense(512, 256))
-        model.add(PReLU((256,)))
+        model.add(Dense(256, input_dim=512))
+        model.add(PReLU())
 
         model.add(Dropout(0.05))
-        model.add(Dense(256, 128))
-        model.add(PReLU((128,)))
+        model.add(Dense(128, input_dim=256))
+        model.add(PReLU())
 
         model.add(Dropout(0.025))
-        model.add(Dense(128, 64))
-        model.add(PReLU((64,)))
+        model.add(Dense(64, input_dim=128))
+        model.add(PReLU())
 
-        model.add(Dense(64, 2))
+        model.add(Dense(2, input_dim=64))
         model.add(Activation('softmax'))
         model.compile(loss='binary_crossentropy', optimizer='rmsprop')
         return model
@@ -116,13 +116,13 @@ class KerasModel(base_model.BaseModel):
             for my_idx in shuffled_features:
                 if my_idx in valid_batches.keys():
                     continue
-                (X_train, y_train) = cPickle.load(gzip.open("{}/{}.pickle.tgz".format(self.feature_extractor.cache_path, my_idx)))
+                (X_train, y_train) = cPickle.load(open("{}/{}.pickle".format(self.feature_extractor.cache_path, my_idx)))
                 print "   Training batch ", my_idx, "...",
                 print "Positive Percentage =", sum(y_train) * 1. / len(y_train)
                 self._fit_internal(X_train, y_train)
 
             for my_idx in valid_batches.keys():
-                (X_train, y_train) = cPickle.load(gzip.open("{}/{}.pickle.tgz".format(self.feature_extractor.cache_path, my_idx)))
+                (X_train, y_train) = cPickle.load(open("{}/{}.pickle".format(self.feature_extractor.cache_path, my_idx)))
                 print "   Collecting cross validation for batch ", my_idx, "..."
                 y_pred_total = numpy.append(y_pred_total, self._predict_internal(X_train))
                 y_valid_total = numpy.append(y_valid_total, y_train)
