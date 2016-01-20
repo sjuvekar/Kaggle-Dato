@@ -14,5 +14,5 @@ for fin in test_svm.txt.{0..66} ; do echo $fin; cat $fin >> test_svm.txt ; done
 cd -
 
 # Train the models now
-make working/submissions/xgboost_model.csv
-make working/submissions/keras_model.csv
+make working/predictions/xgboost_model.csv
+make working/predictions/keras_model.csv

@@ -44,6 +44,10 @@ class BaseModel(object):
         pass
 
 
+    def predict_and_dump(self, submission_file):
+        pass
+
+
     def dump(self, filename):
         print "Dumping model to", filename, "..."
         with open(filename, "wb") as f:
