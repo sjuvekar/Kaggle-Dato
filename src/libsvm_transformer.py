@@ -39,7 +39,7 @@ class LibSvmTransformer(BaseModel):
 
 
     def _predict_internal(self, X_test):
-        self._convert_batch_to_libsvm(X_test, numpy.zeros(len(X_test)), "{}.{}".format(self.test_file, self.test_count))
+        self._convert_batch_to_libsvm(X_test, numpy.zeros(X_test.shape[0]), "{}.{}".format(self.test_file, self.test_count))
         self.test_count += 1
 
 
